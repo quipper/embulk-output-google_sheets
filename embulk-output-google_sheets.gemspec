@@ -15,8 +15,8 @@ Gem::Specification.new do |spec|
 
   #spec.add_dependency 'YOUR_GEM_DEPENDENCY', ['~> YOUR_GEM_DEPENDENCY_VERSION']
   spec.add_development_dependency 'embulk', ['>= 0.8.39']
-  spec.add_development_dependency 'bundler', ['>= 1.10.6']
-  spec.add_development_dependency 'rake', ['>= 10.0']
+  spec.add_development_dependency 'bundler', ['>= 2.1.4']
+  spec.add_development_dependency 'rake', ['>= 13.0.1']
 
-  spec.add_dependency 'google-api-client', ['>= 0.32.1']
+  spec.add_dependency 'google-api-client', ['>= 0.36.4']
 end
