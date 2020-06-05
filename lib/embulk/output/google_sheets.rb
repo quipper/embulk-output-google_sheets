@@ -9,11 +9,27 @@ module Embulk
     class GoogleSheets < OutputPlugin
       Plugin.register_output("google_sheets", self)
 
+      # To support configuration like below as org.embulk.spi.unit.LocalFile
+      #
+      # json_keyfile:
+      #   content: |
+      class LocalFile
+        # @return JSON string
+        def self.load(v)
+          if v.is_a?(String) # path
+            File.read(File.expand_path(v))
+          elsif v.is_a?(Hash)
+            v['content']
+          end
+        end
+      end
+
       def self.transaction(config, schema, count, &control)
         task = {
           "spreadsheet_id" => config.param("spreadsheet_id", :string),
-          "credentials_file_path" => config.param("credentials_file_path", :string),
-          "range" => config.param("range", :string),
+          "credentials_file_path" => config.param("credentials_file_path", LocalFile, :default => nil),
+          "range" => config.param("range", :string, :default => 'Sheet1:A1'),
+          "mode" => config.param("mode", :string, :default => 'REPLACE'),
         }
         task_reports = yield(task)
         next_config_diff = {}
@@ -24,10 +40,11 @@ module Embulk
         @spreadsheet_id = task['spreadsheet_id']
         @credentials_file_path = task['credentials_file_path']
         @range = task['range']
+        @mode = task['mode']
         @service = Google::Apis::SheetsV4::SheetsService.new
         @service.client_options.application_name = "embulk-output-google_sheets"
         @service.authorization = Google::Auth::ServiceAccountCredentials.make_creds(
-          json_key_io: File.open(@credentials_file_path),
+          json_key_io: StringIO.new(task['credentials_file_path']),
           scope: Google::Apis::SheetsV4::AUTH_SPREADSHEETS
         )
         @values = []
@@ -51,31 +68,55 @@ module Embulk
 
       def commit
         target_sheet_title = @range.split("!")[0]
+
         add_sheet_request = Google::Apis::SheetsV4::AddSheetRequest.new
         add_sheet_request.properties = Google::Apis::SheetsV4::SheetProperties.new(title: target_sheet_title)
         batch_update_spreadsheet_request = [{ add_sheet: add_sheet_request }]
         request_body = Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest.new(requests: batch_update_spreadsheet_request)
 
         begin
-          response = @service.batch_update_spreadsheet(@spreadsheet_id, request_body)
-          p response
+          @service.batch_update_spreadsheet(@spreadsheet_id, request_body)
         rescue => e
           Embulk.logger.info(e.message)
         end
 
-        data = [
-          {
-            range: @range,
-            majorDimension: 'ROWS',
-            values: @values
-          }
-        ]
 
-        request_body = Google::Apis::SheetsV4::BatchUpdateValuesRequest.new(value_input_option: 'USER_ENTERED', insert_data_option: 'OVERWRITE', data: data)
-        begin
-          @service.batch_update_values(@spreadsheet_id, request_body)
-        rescue => e
-          Embulk.logger.info(e.message)
+        if @mode.downcase == 'append'
+            request_body = Google::Apis::SheetsV4::ValueRange.new
+            request_body.major_dimension = 'ROWS'
+            request_body.range = @range
+            # skip header
+            request_body.values = @values.drop(1)
+            begin
+              @service.append_spreadsheet_value(@spreadsheet_id, @range, request_body, value_input_option: 'USER_ENTERED')
+            rescue => e
+              Embulk.logger.info(e.message)
+            end
+        elsif @mode.downcase == 'replace'
+            # clear all cells
+            request_body = Google::Apis::SheetsV4::BatchClearValuesRequest.new
+            request_body.ranges = [target_sheet_title + '!A:ZZ']
+            begin
+              @service.batch_clear_values(@spreadsheet_id, request_body)
+            rescue => e
+              Embulk.logger.info(e.message)
+            end
+
+            # update the worksheet
+            request_body = Google::Apis::SheetsV4::BatchUpdateValuesRequest.new
+            request_body.value_input_option = 'USER_ENTERED'
+            request_body.data = [
+                                    {
+                                        range: @range,
+                                        majorDimension: 'ROWS',
+                                        values: @values
+                                    }
+                                ]
+            begin
+              @service.batch_update_values(@spreadsheet_id, request_body)
+            rescue => e
+              Embulk.logger.info(e.message)
+            end
         end
 
         task_report = {}
