@@ -18,5 +18,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'bundler', ['>= 2.1.4']
   spec.add_development_dependency 'rake', ['>= 13.0.1']
 
-  spec.add_dependency 'google-api-client', ['>= 0.36.4']
+  spec.add_dependency 'google-api-client', ['>= 0.32.1']
 end
