@@ -17,13 +17,6 @@ TODO: Write short description here and embulk-output-google_sheets.gemspec file.
 
 ## Example
 
-```yaml
-out:
-  type: google_sheets
-  option1: example1
-  option2: example2
-```
-
 
 ## Build
 
