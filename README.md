@@ -1,6 +1,6 @@
 # Google Sheets output plugin for Embulk
 
-Embulk output lugin to insert data into Google Sheets
+Embulk output plugin to insert data into Google Sheets
 
 
 ## Overview
