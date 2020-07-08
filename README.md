@@ -1,8 +1,11 @@
 # Google Sheets output plugin for Embulk
 
-TODO: Write short description here and embulk-output-google_sheets.gemspec file.
+Embulk output lugin to insert data into Google Sheets
+
 
 ## Overview
+insert data into Google Sheets using [Google Sheets API v4](https://developers.google.com/sheets/api).
+
 
 * **Plugin type**: output
 * **Load all or nothing**: no
@@ -11,12 +14,22 @@ TODO: Write short description here and embulk-output-google_sheets.gemspec file.
 
 ## Configuration
 
-- **option1**: description (integer, required)
-- **option2**: description (string, default: `"myvalue"`)
-- **option3**: description (string, default: `null`)
+|  name  |  type  | required? | default | description |
+| ---- | ---- | ---- | ---- | ----|
+|  spreadsheet_id  | string | required | |
+|  credentials_file_path  | string | required | nil |
+|  range  | string | optional | 'Sheet1:A1' |
+|  mode  | string | optional | 'REPLACE' | 'APPEND' or 'REPLACE'
 
 ## Example
 
+```
+out:
+  type: google_sheets
+  spreadsheet_id: {{ env.SPREADSHEET_ID }}
+  credentials_file_path: /path/to/credential_file
+  mode: REPLACE
+```
 
 ## Build
 
