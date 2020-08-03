@@ -42,7 +42,7 @@ module Embulk
         @credentials_file_path = task['credentials_file_path']
         @range = task['range']
         @mode = task['mode']
-  @header_line = task['header_line']
+        @header_line = task['header_line']
         @service = Google::Apis::SheetsV4::SheetsService.new
         @service.client_options.application_name = "embulk-output-google_sheets"
         @service.authorization = Google::Auth::ServiceAccountCredentials.make_creds(
@@ -56,9 +56,9 @@ module Embulk
       end
 
       def add(page)
-  if @header_line == true and @mode.downcase == 'replace'
-    @values << schema.map(&:name)
-  end
+        if @header_line == true and @mode.downcase == 'replace'
+          @values << schema.map(&:name)
+        end
         page.each do |record|
           @values << record
         end
