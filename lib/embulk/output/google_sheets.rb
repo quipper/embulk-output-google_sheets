@@ -31,7 +31,7 @@ module Embulk
           "range" => config.param("range", :string, :default => 'Sheet1!A1'),
           "mode" => config.param("mode", :string, :default => 'REPLACE'),
           "header_line" => config.param("header_line", :bool, :default => true)
-  }
+        }
         task_reports = yield(task)
         next_config_diff = {}
         return next_config_diff
