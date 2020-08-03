@@ -28,8 +28,9 @@ module Embulk
         task = {
           "spreadsheet_id" => config.param("spreadsheet_id", :string),
           "credentials_file_path" => config.param("credentials_file_path", LocalFile, :default => nil),
-          "range" => config.param("range", :string, :default => 'Sheet1:A1'),
+          "range" => config.param("range", :string, :default => 'Sheet1!A1'),
           "mode" => config.param("mode", :string, :default => 'REPLACE'),
+          "header_line" => config.param("header_line", :bool, :default => true)
         }
         task_reports = yield(task)
         next_config_diff = {}
@@ -41,6 +42,7 @@ module Embulk
         @credentials_file_path = task['credentials_file_path']
         @range = task['range']
         @mode = task['mode']
+        @header_line = task['header_line']
         @service = Google::Apis::SheetsV4::SheetsService.new
         @service.client_options.application_name = "embulk-output-google_sheets"
         @service.authorization = Google::Auth::ServiceAccountCredentials.make_creds(
@@ -48,13 +50,15 @@ module Embulk
           scope: Google::Apis::SheetsV4::AUTH_SPREADSHEETS
         )
         @values = []
-        @values << schema.map(&:name)
       end
 
       def close
       end
 
       def add(page)
+        if @header_line == true and @mode.downcase == 'replace'
+          @values << schema.map(&:name)
+        end
         page.each do |record|
           @values << record
         end
@@ -95,7 +99,7 @@ module Embulk
         elsif @mode.downcase == 'replace'
             # clear all cells
             request_body = Google::Apis::SheetsV4::BatchClearValuesRequest.new
-            request_body.ranges = [target_sheet_title + '!A:ZZ']
+            request_body.ranges = [@range + ':ZZ']
             begin
               @service.batch_clear_values(@spreadsheet_id, request_body)
             rescue => e
