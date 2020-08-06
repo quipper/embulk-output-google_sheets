@@ -50,15 +50,15 @@ module Embulk
           scope: Google::Apis::SheetsV4::AUTH_SPREADSHEETS
         )
         @values = []
+        if @header_line == true and @mode.downcase == 'replace'
+          @values << schema.map(&:name)
+        end
       end
 
       def close
       end
 
       def add(page)
-        if @header_line == true and @mode.downcase == 'replace'
-          @values << schema.map(&:name)
-        end
         page.each do |record|
           @values << record
         end
@@ -89,8 +89,6 @@ module Embulk
             request_body = Google::Apis::SheetsV4::ValueRange.new
             request_body.major_dimension = 'ROWS'
             request_body.range = @range
-            # skip header
-            request_body.values = @values.drop(1)
             begin
               @service.append_spreadsheet_value(@spreadsheet_id, @range, request_body, value_input_option: 'USER_ENTERED')
             rescue => e
@@ -99,7 +97,7 @@ module Embulk
         elsif @mode.downcase == 'replace'
             # clear all cells
             request_body = Google::Apis::SheetsV4::BatchClearValuesRequest.new
-            request_body.ranges = [@range + ':ZZ']
+            request_body.ranges = [target_sheet_title + '!A:ZZ']
             begin
               @service.batch_clear_values(@spreadsheet_id, request_body)
             rescue => e
