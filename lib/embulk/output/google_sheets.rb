@@ -97,7 +97,7 @@ module Embulk
         elsif @mode.downcase == 'replace'
             # clear all cells
             request_body = Google::Apis::SheetsV4::BatchClearValuesRequest.new
-            request_body.ranges = [@range + ':ZZ']
+            request_body.ranges = [target_sheet_title + '!A:ZZ']
             begin
               @service.batch_clear_values(@spreadsheet_id, request_body)
             rescue => e
