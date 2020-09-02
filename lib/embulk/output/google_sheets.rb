@@ -89,8 +89,9 @@ module Embulk
             request_body = Google::Apis::SheetsV4::ValueRange.new
             request_body.major_dimension = 'ROWS'
             request_body.range = @range
+            request_body.values = @values
             begin
-              @service.append_spreadsheet_value(@spreadsheet_id, @range, request_body, value_input_option: 'USER_ENTERED')
+              @service.append_spreadsheet_value(@spreadsheet_id, @range, request_body, value_input_option: 'USER_ENTERED',insert_data_option: 'INSERT_ROWS' )
             rescue => e
               Embulk.logger.info(e.message)
             end
