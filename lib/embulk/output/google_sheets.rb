@@ -60,7 +60,7 @@ module Embulk
             scope: scope
           )
         when 'application_default'
-          @service.authorization = Google::Auth.get_application_default([scope])
+          @service.authorization = Google::Auth.get_application_default(scope)
         else
           raise ConfigError.new("Unknown auth method: #{auth_method}")
         end
