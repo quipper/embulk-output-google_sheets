@@ -28,6 +28,7 @@ module Embulk
         task = {
           "spreadsheet_id" => config.param("spreadsheet_id", :string),
           "credentials_file_path" => config.param("credentials_file_path", LocalFile, :default => nil),
+          "auth_method" => config.param("auth_method", :string,  :default => 'json_keyfile'),
           "range" => config.param("range", :string, :default => 'Sheet1!A1'),
           "mode" => config.param("mode", :string, :default => 'REPLACE'),
           "header_line" => config.param("header_line", :bool, :default => true)
@@ -35,6 +36,12 @@ module Embulk
         task_reports = yield(task)
         next_config_diff = {}
         return next_config_diff
+      end
+
+      def scope
+        [
+          Google::Apis::SheetsV4::AUTH_SPREADSHEETS
+        ]
       end
 
       def init
@@ -45,10 +52,19 @@ module Embulk
         @header_line = task['header_line']
         @service = Google::Apis::SheetsV4::SheetsService.new
         @service.client_options.application_name = "embulk-output-google_sheets"
-        @service.authorization = Google::Auth::ServiceAccountCredentials.make_creds(
-          json_key_io: StringIO.new(task['credentials_file_path']),
-          scope: Google::Apis::SheetsV4::AUTH_SPREADSHEETS
-        )
+
+        case task['auth_method']
+        when 'json_keyfile'
+          @service.authorization = Google::Auth::ServiceAccountCredentials.make_creds(
+            json_key_io: StringIO.new(task['credentials_file_path']),
+            scope: scope
+          )
+        when 'application_default'
+          @service.authorization = Google::Auth.get_application_default([scope])
+        else
+          raise ConfigError.new("Unknown auth method: #{auth_method}")
+        end
+
         @values = []
         if @header_line == true and @mode.downcase == 'replace'
           @values << schema.map(&:name)
