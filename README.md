@@ -17,7 +17,8 @@ insert data into Google Sheets using [Google Sheets API v4](https://developers.g
 |  name  |  type  | required? | default | description |
 | ---- | ---- | ---- | ---- | ----|
 |  spreadsheet_id  | string | required | |
-|  credentials_file_path  | string | required | nil |
+|  auth_method  | string | required | json_keyfile | 'application_default' or 'json_keyfile'
+|  credentials_file_path  | string | optional | nil | used when auth_method is 'json_keyfile'
 |  range  | string | optional | 'Sheet1:A1' |
 |  mode  | string | optional | 'REPLACE' | 'APPEND' or 'REPLACE'
 
